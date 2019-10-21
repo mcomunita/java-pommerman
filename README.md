@@ -1,3 +1,5 @@
+FORKED for AI in GAMES - Assignment 1
+
 AIIDE 2019 Artifact
 -------------------
 
