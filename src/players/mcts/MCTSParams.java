@@ -24,15 +24,15 @@ public class MCTSParams implements ParameterSet {
     public double epsilon = 1e-6;
 
     // Parameters
-    public double K = Math.sqrt(2);
-    public int rollout_depth = 8;//10;
-    public int heuristic_method = CUSTOM_HEURISTIC;
+    public double K = Math.sqrt(2); // constant for UCB1 - default sqrt(2)
+    public int rollout_depth = 8;   // Number of steps the tree can grow from the root
+    public int heuristic_method = CUSTOM_HEURISTIC; // Heuristic to evaluate a state
 
     // Budget settings
-    public int stop_type = STOP_TIME;
+    public int stop_type = STOP_TIME; // default = 0
     public int num_iterations = 200;
     public int num_fmcalls = 2000;
-    public int num_time = 40;
+    public int num_time = 40;         // change to 100ms?
 
     @Override
     public void setParameterValue(String param, Object value) {

@@ -68,7 +68,7 @@ public class MCTSPlayer extends ParameterizedPlayer {
         // Number of actions available
         int num_actions = actions.length;
 
-        // Root of the tree
+        // Root of the tree = current game state
         SingleTreeNode m_root = new SingleTreeNode(params, m_rnd, num_actions, actions);
         m_root.setRootGameState(gs);
 
