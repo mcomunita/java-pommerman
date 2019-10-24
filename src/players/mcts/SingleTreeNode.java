@@ -30,7 +30,7 @@ public class SingleTreeNode
     private Types.ACTIONS[] actions;
 
     private GameState rootState;
-    private StateHeuristic rootStateHeuristic;
+    private StateHeuristic rootStateHeuristic;  // heuristic used in rollOut at the end of simulation
 
 
 
@@ -228,9 +228,11 @@ public class SingleTreeNode
         //We'll pick the action with the highest UCB1 value.
         SingleTreeNode selected = null;
         double bestValue = -Double.MAX_VALUE;
+
+        //For each children, calculate the different parts.
         for (SingleTreeNode child : this.children)
         {
-            //For each children, calculate the different parts. First, exploitation:
+
             double hvVal = child.totValue;
             double childValue =  hvVal / (child.nVisits + params.epsilon);
 
@@ -247,6 +249,7 @@ public class SingleTreeNode
                 bestValue = uctValue;
             }
         }
+
         if (selected == null)
         {
             throw new RuntimeException("Warning! returning null: " + bestValue + " : " + this.children.length + " " +
@@ -420,7 +423,7 @@ public class SingleTreeNode
     }
 
 
-    
+
     /**
      * Returns the index of the action with the highest UCB1 value to take from this node.
      * @return the index of the best action

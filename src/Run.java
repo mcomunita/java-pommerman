@@ -25,7 +25,7 @@ public class Run {
         System.out.println("\t\t 1 Random");
         System.out.println("\t\t 2 OSLA");
         System.out.println("\t\t 3 SimplePlayer");
-        System.out.println("\t\t 4 RHEA 200 itereations, shift buffer, pop size 1, random init, length: 12");
+        System.out.println("\t\t 4 RHEA 200 iterations, shift buffer, pop size 1, random init, length: 12");
         System.out.println("\t\t 5 MCTS 200 iterations, length: 12");
     }
 
@@ -33,7 +33,31 @@ public class Run {
 
         //default
         if(args.length == 0)
-            args = new String[]{"0", "1", "1", "-1", "2", "3", "4", "5"};
+            /* Conditions similar to D. Perez-Liebana et al. 2019
+            *   Game Mode: FFA
+            *   Levels: 20 (with fixed seeds, "-1" for parameter arg index = 1)
+            *   Reps per Seed: 10
+            *   VR: 2 and inf
+            *   Agents Settings:
+            *       1 - MCTS vs RandomPlayer x3
+            *       2 - MCTS vs OSLA x3
+            *       3 - MCTS vs Simple x3
+            *       4 - MCTS vs RHEA x3
+            *       5 - RHEA vs RandomPlayer x3
+            *       6 - RHEA vs OSLA x3
+            *       7 - RHEA vs Simple x3
+            *       8 - RHEA vs MCTS x3
+             */
+            args = new String[]{
+                    "0",        // Game Mode. 0: FFA; 1: TEAM");
+                    "-1",       // Number of level generation seeds. -1 to execute with the ones from paper (20).")
+                    "10",       // Repetitions per seed [N].
+                    "-1",        // Vision Range [VR]. (0, 1, 2... for PO; -1 for Full Observability)
+                    "4",        // Agent 1 (0 DoNothing, 1 Random, 2 OSLA, 3 RuleBased, 4 RHEA, 5 MCTS
+                    "2",        // Agent 2
+                    "5",        // Agent 3
+                    "3"         // Agent 4
+            };
 
         if(args.length != 8) {
             printHelp();
