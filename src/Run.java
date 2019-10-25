@@ -2,6 +2,8 @@ import core.Game;
 import players.*;
 import players.mcts.MCTSParams;
 import players.mcts.MCTSPlayer;
+import groupV.VPlayer;
+import groupV.VParams;
 import players.rhea.RHEAPlayer;
 import players.rhea.utils.Constants;
 import players.rhea.utils.RHEAParams;
@@ -27,6 +29,7 @@ public class Run {
         System.out.println("\t\t 3 SimplePlayer");
         System.out.println("\t\t 4 RHEA 200 iterations, shift buffer, pop size 1, random init, length: 12");
         System.out.println("\t\t 5 MCTS 200 iterations, length: 12");
+        System.out.println("\t\t 6 VPlayer 100 iterations, length: 12");
     }
 
     public static void main(String[] args) {
@@ -53,7 +56,7 @@ public class Run {
                     "-1",       // Number of level generation seeds. -1 to execute with the ones from paper (20).")
                     "10",       // Repetitions per seed [N].
                     "-1",        // Vision Range [VR]. (0, 1, 2... for PO; -1 for Full Observability)
-                    "4",        // Agent 1 (0 DoNothing, 1 Random, 2 OSLA, 3 RuleBased, 4 RHEA, 5 MCTS
+                    "1",        // Agent 1 (0 DoNothing, 1 Random, 2 OSLA, 3 RuleBased, 4 RHEA, 5 MCTS, 6 VPlayer
                     "2",        // Agent 2
                     "5",        // Agent 3
                     "3"         // Agent 4
@@ -144,6 +147,16 @@ public class Run {
                         mctsParams.heuristic_method = mctsParams.CUSTOM_HEURISTIC;
                         p = new MCTSPlayer(seed, playerID++, mctsParams);
                         playerStr[i-4] = "MCTS";
+                        break;
+                    case 6:
+                        VParams vParams = new VParams();
+                        vParams.stop_type = vParams.STOP_ITERATIONS;
+                        vParams.num_iterations = 200;
+                        vParams.rollout_depth = 12;
+
+                        vParams.heuristic_method = vParams.CUSTOM_HEURISTIC;
+                        p = new VPlayer(seed, playerID++, vParams);
+                        playerStr[i-4] = "VPlayer";
                         break;
                     default:
                         System.out.println("WARNING: Invalid agent ID: " + agentType );
