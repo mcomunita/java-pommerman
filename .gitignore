@@ -8,3 +8,6 @@
 res/gamelogs/json/
 
 res/gamelogs/
+/bin/
+.classpath
+.project
