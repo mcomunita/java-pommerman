@@ -9,7 +9,7 @@ import utils.Types;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class MCTSPlayer extends ParameterizedPlayer {
+public class VPlayer extends ParameterizedPlayer {
 
     /**
      * Random generator.
@@ -24,13 +24,13 @@ public class MCTSPlayer extends ParameterizedPlayer {
     /**
      * Params for this MCTS
      */
-    public MCTSParams params;
+    public VParams params;
 
-    public MCTSPlayer(long seed, int id) {
-        this(seed, id, new MCTSParams());
+    public VPlayer(long seed, int id) {
+        this(seed, id, new VParams());
     }
 
-    public MCTSPlayer(long seed, int id, MCTSParams params) {
+    public VPlayer(long seed, int id, VParams params) {
         super(seed, id, params);
         reset(seed, id);
 
@@ -47,9 +47,9 @@ public class MCTSPlayer extends ParameterizedPlayer {
         super.reset(seed, playerID);
         m_rnd = new Random(seed);
 
-        this.params = (MCTSParams) getParameters();
+        this.params = (VParams) getParameters();
         if (this.params == null) {
-            this.params = new MCTSParams();
+            this.params = new VParams();
             super.setParameters(this.params);
         }
     }
@@ -69,7 +69,7 @@ public class MCTSPlayer extends ParameterizedPlayer {
         int num_actions = actions.length;
 
         // Root of the tree = current game state
-        SingleTreeNode m_root = new SingleTreeNode(params, m_rnd, num_actions, actions);
+        VTreeNode m_root = new VTreeNode(params, m_rnd, num_actions, actions);
         m_root.setRootGameState(gs);
 
         //Determine the action using MCTS...
@@ -94,6 +94,6 @@ public class MCTSPlayer extends ParameterizedPlayer {
 
     @Override
     public Player copy() {
-        return new MCTSPlayer(seed, playerID, params);
+        return new VPlayer(seed, playerID, params);
     }
 }

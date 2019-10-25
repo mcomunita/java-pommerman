@@ -8,7 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @SuppressWarnings("WeakerAccess")
-public class MCTSParams implements ParameterSet {
+public class VParams implements ParameterSet {
 
     // Constants
     public final double HUGE_NEGATIVE = -1000;

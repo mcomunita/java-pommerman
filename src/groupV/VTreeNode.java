@@ -12,12 +12,12 @@ import utils.Vector2d;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class SingleTreeNode
+public class VTreeNode
 {
-    public MCTSParams params;
+    public VParams params;
 
-    private SingleTreeNode parent;
-    private SingleTreeNode[] children;
+    private VTreeNode parent;
+    private VTreeNode[] children;
     private double totValue;
     private int nVisits;
     private Random m_rnd;
@@ -34,13 +34,13 @@ public class SingleTreeNode
 
 
 
-    SingleTreeNode(MCTSParams p, Random rnd, int num_actions, Types.ACTIONS[] actions) {
+    VTreeNode(VParams p, Random rnd, int num_actions, Types.ACTIONS[] actions) {
         this(p, null, -1, rnd, num_actions, actions, 0, null);
     }
 
 
 
-    private SingleTreeNode(MCTSParams p, SingleTreeNode parent, int childIdx, Random rnd, int num_actions,
+    private VTreeNode(VParams p, VTreeNode parent, int childIdx, Random rnd, int num_actions,
                            Types.ACTIONS[] actions, int fmCallsCount, StateHeuristic sh) {
         this.params = p;
         this.fmCallsCount = fmCallsCount;
@@ -48,7 +48,7 @@ public class SingleTreeNode
         this.m_rnd = rnd;
         this.num_actions = num_actions;
         this.actions = actions;
-        children = new SingleTreeNode[num_actions];
+        children = new VTreeNode[num_actions];
         totValue = 0.0;
         this.childIdx = childIdx;
         if(parent != null) {
@@ -89,7 +89,7 @@ public class SingleTreeNode
             ElapsedCpuTimer elapsedTimerIteration = new ElapsedCpuTimer();
 
             // 1. Selection and 2. Expansion are executed in treePolicy(state)
-            SingleTreeNode selected = treePolicy(state);
+            VTreeNode selected = treePolicy(state);
             // 3. Simulation - rollout
             double delta = selected.rollOut(state);
             //4. Back-propagation
@@ -124,10 +124,10 @@ public class SingleTreeNode
      * @param state Current state to do the policy from.
      * @return the expanded node.
      */
-    private SingleTreeNode treePolicy(GameState state) {
+    private VTreeNode treePolicy(GameState state) {
 
         //'cur': our current node in the tree.
-        SingleTreeNode cur = this;
+        VTreeNode cur = this;
 
         //We keep going down the tree as long as the game is not over and we haven't reached the maximum depth
         while (!state.isTerminal() && cur.m_depth < params.rollout_depth)
@@ -152,7 +152,7 @@ public class SingleTreeNode
      * @param state Game state *before* the expansion happens (i.e. parent node that is not fully expanded).
      * @return The newly expande tree node.
      */
-    private SingleTreeNode expand(GameState state) {
+    private VTreeNode expand(GameState state) {
 
         //Go through all the not-expanded children of this node and pick one at random.
         int bestAction = 0;
@@ -171,7 +171,7 @@ public class SingleTreeNode
 
         //state is now the next state, of the expanded node. Create a node with such state
         // and add it to the tree, as child of 'this'
-        SingleTreeNode tn = new SingleTreeNode(params,this,bestAction,this.m_rnd,num_actions,
+        VTreeNode tn = new VTreeNode(params,this,bestAction,this.m_rnd,num_actions,
                 actions, fmCallsCount, rootStateHeuristic);
         children[bestAction] = tn;
 
@@ -223,14 +223,14 @@ public class SingleTreeNode
      * @param state
      * @return
      */
-    private SingleTreeNode uct(GameState state) {
+    private VTreeNode uct(GameState state) {
 
         //We'll pick the action with the highest UCB1 value.
-        SingleTreeNode selected = null;
+        VTreeNode selected = null;
         double bestValue = -Double.MAX_VALUE;
 
         //For each children, calculate the different parts.
-        for (SingleTreeNode child : this.children)
+        for (VTreeNode child : this.children)
         {
 
             double hvVal = child.totValue;
@@ -353,9 +353,9 @@ public class SingleTreeNode
      * @param node Node to start backup from. This node should be the one expanded in this iteration.
      * @param result Reward to back-propagate
      */
-    private void backUp(SingleTreeNode node, double result)
+    private void backUp(VTreeNode node, double result)
     {
-        SingleTreeNode n = node;
+        VTreeNode n = node;
 
         //Go up until n == null, which happens after updating the root.
         while(n != null)
@@ -460,7 +460,7 @@ public class SingleTreeNode
      * @return true if the node is not fully expanded.
      */
     private boolean notFullyExpanded() {
-        for (SingleTreeNode tn : children) {
+        for (VTreeNode tn : children) {
             if (tn == null) {
                 return true;
             }
