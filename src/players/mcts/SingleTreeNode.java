@@ -78,8 +78,6 @@ public class SingleTreeNode
         double acumTimeTaken = 0;
         long remaining;
         int numIters = 0;
-        // TODO is this needed here?
-        int epoch = 0;
 
         int remainingLimit = 5;
         boolean stop = false;
@@ -91,7 +89,7 @@ public class SingleTreeNode
             ElapsedCpuTimer elapsedTimerIteration = new ElapsedCpuTimer();
 
             // 1. Selection and 2. Expansion are executed in treePolicy(state)
-            SingleTreeNode selected = treePolicy(state, epoch);
+            SingleTreeNode selected = treePolicy(state);
             // 3. Simulation - rollout
             double delta = selected.rollOut(state);
             //4. Back-propagation
@@ -126,7 +124,7 @@ public class SingleTreeNode
      * @param state Current state to do the policy from.
      * @return the expanded node.
      */
-    private SingleTreeNode treePolicy(GameState state, int epoch) {
+    private SingleTreeNode treePolicy(GameState state) {
 
         //'cur': our current node in the tree.
         SingleTreeNode cur = this;
@@ -139,61 +137,12 @@ public class SingleTreeNode
                 //This one is the node to start the rollout from.
                 return cur.expand(state);
             } else {
-                // todo test this loop, might be wrong
-                int r_j = 0;
-                double alpha = 0.1;
-                while (r_j < Math.pow(1 + alpha, r_j + 1) - Math.pow(1 + alpha, r_j)) {
-                    if (r_j == 0) {
-                        cur = cur.ucb2(state, alpha, epoch);
-                    }
-                    r_j++;
-                }
-                epoch++;
+                //If fully expanded, apply UCT to pick one of the children of 'cur'
+                cur = cur.uct(state);
             }
         }
         //This one is the node to start the rollout from.
         return cur;
-    }
-
-    // UCB2 calculation
-    // todo create tree policy class and extend from there
-    // todo check below
-    private SingleTreeNode ucb2(GameState state, double alpha, int epoch) {
-        SingleTreeNode selected = null;
-        double bestValue = -Double.MAX_VALUE;
-        for (SingleTreeNode child : this.children)
-        {
-            //For each children, calculate the different parts.
-            // First, exploitation:
-            double hvVal = child.totValue;
-            double childValue = hvVal / (child.nVisits + params.epsilon);
-            double exploit = Utils.normalise(childValue, bounds[0], bounds[1]);
-
-            // n is the number of epochs the node was selected. So = epoch here
-            double explore = Math.sqrt((1 + alpha)
-                    * Math.log(Math.exp(1) * this.nVisits / Math.pow(1 + alpha, epoch))
-                    / (2 * Math.pow(1 + alpha, epoch)));
-
-            double uctValue = exploit + explore;
-
-            uctValue = Utils.noise(uctValue, params.epsilon, this.m_rnd.nextDouble());     //break ties randomly
-
-            // small sampleRandom numbers: break ties in unexpanded nodes
-            if (uctValue > bestValue) {
-                selected = child;
-                bestValue = uctValue;
-            }
-        }
-        if (selected == null)
-        {
-            throw new RuntimeException("Warning! returning null: " + bestValue + " : " + this.children.length + " " +
-                    + bounds[0] + " " + bounds[1]);
-        }
-
-        //Roll the state:
-        roll(state, actions[selected.childIdx]);
-
-        return selected;
     }
 
 
