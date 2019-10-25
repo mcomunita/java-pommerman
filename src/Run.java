@@ -1,4 +1,6 @@
 import core.Game;
+import groupV.VParams;
+import groupV.VPlayer;
 import players.*;
 import players.mcts.MCTSParams;
 import players.mcts.MCTSPlayer;
@@ -144,6 +146,16 @@ public class Run {
                         mctsParams.heuristic_method = mctsParams.CUSTOM_HEURISTIC;
                         p = new MCTSPlayer(seed, playerID++, mctsParams);
                         playerStr[i-4] = "MCTS";
+                        break;
+                    case 6:
+                        VParams vParams = new VParams();
+                        vParams.stop_type = vParams.STOP_ITERATIONS;
+                        vParams.num_iterations = 200;
+                        vParams.rollout_depth = 12;
+
+                        vParams.heuristic_method = vParams.CUSTOM_HEURISTIC;
+                        p = new VPlayer(seed, playerID++, vParams);
+                        playerStr[i-4] = "SuperMCTS";
                         break;
                     default:
                         System.out.println("WARNING: Invalid agent ID: " + agentType );
