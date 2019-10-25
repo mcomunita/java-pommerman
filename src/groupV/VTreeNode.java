@@ -20,6 +20,7 @@ public class VTreeNode
     private VTreeNode[] children;
     private double totValue;
     private int nVisits;
+    private int r_epochs;
     private Random m_rnd;
     private int m_depth;
     private double[] bounds = new double[]{Double.MAX_VALUE, -Double.MAX_VALUE};
@@ -41,7 +42,7 @@ public class VTreeNode
 
 
     private VTreeNode(VParams p, VTreeNode parent, int childIdx, Random rnd, int num_actions,
-                           Types.ACTIONS[] actions, int fmCallsCount, StateHeuristic sh) {
+                      Types.ACTIONS[] actions, int fmCallsCount, StateHeuristic sh) {
         this.params = p;
         this.fmCallsCount = fmCallsCount;
         this.parent = parent;
@@ -137,12 +138,61 @@ public class VTreeNode
                 //This one is the node to start the rollout from.
                 return cur.expand(state);
             } else {
-                //If fully expanded, apply UCT to pick one of the children of 'cur'
-                cur = cur.uct(state);
+                // todo test this loop, might be wrong
+                int counter = 0;
+                double alpha = 0.001;
+                while (counter < Math.pow(1 + alpha, this.r_epochs + 1) - Math.pow(1 + alpha, this.r_epochs)) {
+                    if (counter == 0) {
+                        cur = cur.ucb2(state, alpha);
+                    }
+                    counter++;
+                }
+                this.r_epochs++;
             }
         }
         //This one is the node to start the rollout from.
         return cur;
+    }
+
+    // UCB2 calculation
+    // todo create tree policy class and extend from there
+    // todo check below
+    private VTreeNode ucb2(GameState state, double alpha) {
+        VTreeNode selected = null;
+        double bestValue = -Double.MAX_VALUE;
+        for (VTreeNode child : this.children)
+        {
+            //For each children, calculate the different parts.
+            // First, exploitation:
+            double hvVal = child.totValue;
+            double childValue = hvVal / (child.nVisits + params.epsilon);
+            double exploit = Utils.normalise(childValue, bounds[0], bounds[1]);
+
+            // n is the number of epochs the node was selected. So = epoch here
+            double explore = Math.sqrt((1 + alpha)
+                    * Math.log(Math.exp(1) * this.nVisits / (Math.pow(1 + alpha, this.r_epochs)))
+                    / (2 * Math.pow(1 + alpha, this.r_epochs)));
+
+            double uctValue = exploit + explore;
+
+            uctValue = Utils.noise(uctValue, params.epsilon, this.m_rnd.nextDouble());     //break ties randomly
+
+            // small sampleRandom numbers: break ties in unexpanded nodes
+            if (uctValue > bestValue) {
+                selected = child;
+                bestValue = uctValue;
+            }
+        }
+        if (selected == null)
+        {
+            throw new RuntimeException("Warning! returning null: " + bestValue + " : " + this.children.length + " " +
+                    + bounds[0] + " " + bounds[1]);
+        }
+
+        //Roll the state:
+        roll(state, actions[selected.childIdx]);
+
+        return selected;
     }
 
 
@@ -215,53 +265,6 @@ public class VTreeNode
         //Once the array is ready, advance the state. This changes the internal 'gs' object.
         gs.next(actionsAll);
     }
-
-
-
-    /**
-     * Performs UCT in a node. Selects the action to follow during the tree policy.
-     * @param state
-     * @return
-     */
-    private VTreeNode uct(GameState state) {
-
-        //We'll pick the action with the highest UCB1 value.
-        VTreeNode selected = null;
-        double bestValue = -Double.MAX_VALUE;
-
-        //For each children, calculate the different parts.
-        for (VTreeNode child : this.children)
-        {
-
-            double hvVal = child.totValue;
-            double childValue =  hvVal / (child.nVisits + params.epsilon);
-
-            childValue = Utils.normalise(childValue, bounds[0], bounds[1]);
-
-            double uctValue = childValue +
-                    params.K * Math.sqrt(Math.log(this.nVisits + 1) / (child.nVisits + params.epsilon));
-
-            uctValue = Utils.noise(uctValue, params.epsilon, this.m_rnd.nextDouble());     //break ties randomly
-
-            // small sampleRandom numbers: break ties in unexpanded nodes
-            if (uctValue > bestValue) {
-                selected = child;
-                bestValue = uctValue;
-            }
-        }
-
-        if (selected == null)
-        {
-            throw new RuntimeException("Warning! returning null: " + bestValue + " : " + this.children.length + " " +
-                    + bounds[0] + " " + bounds[1]);
-        }
-
-        //Roll the state:
-        roll(state, actions[selected.childIdx]);
-
-        return selected;
-    }
-
 
     /**
      * Performs the default policy (random rollout).
