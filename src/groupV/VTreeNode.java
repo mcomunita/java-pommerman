@@ -20,6 +20,7 @@ public class VTreeNode
     private VTreeNode[] children;
     private double totValue;
     private int nVisits;
+    private double varianceTerm;
     private int r_epochs;
     private Random m_rnd;
     private int m_depth;
@@ -143,7 +144,7 @@ public class VTreeNode
                 double alpha = 0.001;
                 while (counter < Math.pow(1 + alpha, this.r_epochs + 1) - Math.pow(1 + alpha, this.r_epochs)) {
                     if (counter == 0) {
-                        cur = cur.ucb2(state, alpha);
+                        cur = cur.ucb1Tuned(state);
                     }
                     counter++;
                 }
@@ -170,7 +171,7 @@ public class VTreeNode
 
             // n is the number of epochs the node was selected. So = epoch here
             double explore = Math.sqrt((1 + alpha)
-                    * Math.log(Math.exp(1) * this.nVisits / (Math.pow(1 + alpha, this.r_epochs)))
+                    * Math.log(Math.exp(1) * (this.nVisits + 1) / (Math.pow(1 + alpha, this.r_epochs)))
                     / (2 * Math.pow(1 + alpha, this.r_epochs)));
 
             double uctValue = exploit + explore;
@@ -195,6 +196,55 @@ public class VTreeNode
         return selected;
     }
 
+    // UCB1 tunes calculation: https://link.springer.com/content/pdf/10.1023%2FA%3A1013689704352.pdf
+    // todo check below
+    private VTreeNode ucb1Tuned(GameState state) {
+        VTreeNode selected = null;
+        double bestValue = -Double.MAX_VALUE;
+
+        //For each children, calculate the different parts.
+        for (VTreeNode child : this.children)
+        {
+
+            double hvVal = child.totValue;
+            double childValue =  hvVal / (child.nVisits + params.epsilon);
+
+            childValue = Utils.normalise(childValue, bounds[0], bounds[1]);
+
+            double variance = this.varianceTerm - Math.pow(childValue, 2)
+                        + params.K * Math.sqrt(Math.log(this.nVisits + 1) / (child.nVisits + params.epsilon));
+
+            double varianceBound  = Math.min(variance, 0.25);
+
+            double explore = Math.sqrt(Math.log(this.nVisits + 1) / (child.nVisits + params.epsilon)
+            * varianceBound);
+
+            double uctValue = childValue + explore;
+
+            uctValue = Utils.noise(uctValue, params.epsilon, this.m_rnd.nextDouble());     //break ties randomly
+
+            // small sampleRandom numbers: break ties in unexpanded nodes
+            if (uctValue > bestValue) {
+                selected = child;
+                bestValue = uctValue;
+            }
+            if (selected == null)
+            {
+                System.out.println(varianceBound);
+            }
+        }
+
+        if (selected == null)
+        {
+            throw new RuntimeException("Warning! returning null: " + bestValue + " : " + this.children.length + " " +
+                    + bounds[0] + " " + bounds[1]);
+        }
+
+        //Roll the state:
+        roll(state, actions[selected.childIdx]);
+
+        return selected;
+    }
 
 
     /**
@@ -365,6 +415,7 @@ public class VTreeNode
         {
             n.nVisits++;                //Another visit to this node (N(s)++)
             n.totValue += result;       //Accummulate result (computationally cheaper than having a running average).
+            n.varianceTerm += Math.pow(result, 2) / n.nVisits + 1;
 
             //Update the bounds.
             if (result < n.bounds[0]) {
