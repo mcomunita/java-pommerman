@@ -20,6 +20,7 @@ public class VParams implements ParameterSet {
 
     public final int CUSTOM_HEURISTIC = 0;
     public final int ADVANCED_HEURISTIC = 1;
+    public final int V_HEURISTIC = 2;
 
     public double epsilon = 1e-6;
 
@@ -32,7 +33,7 @@ public class VParams implements ParameterSet {
     public int stop_type = STOP_TIME; // default = 0
     public int num_iterations = 200;
     public int num_fmcalls = 2000;
-    public int num_time = 40;         // change to 100ms?
+    public int num_time = 100;         // change to 100ms?
 
     @Override
     public void setParameterValue(String param, Object value) {
