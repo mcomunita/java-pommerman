@@ -73,7 +73,7 @@ public class VPlayer extends ParameterizedPlayer {
         m_root.setRootGameState(gs);
 
         //Determine the action using MCTS...
-        m_root.mctsSearch(ect);
+        m_root.mctsSearch(ect, "UCB1Tuned");
 
         //Determine the best action to take and return it.
         int action = m_root.mostVisitedAction();

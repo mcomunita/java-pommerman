@@ -33,7 +33,7 @@ public class VParams implements ParameterSet {
     public int stop_type = STOP_TIME; // default = 0
     public int num_iterations = 200;
     public int num_fmcalls = 2000;
-    public int num_time = 100;         // change to 100ms?
+    public int num_time = 100;
 
     @Override
     public void setParameterValue(String param, Object value) {
