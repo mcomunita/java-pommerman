@@ -21,7 +21,7 @@ public class VTreeNode
     private double totValue;
     private int nVisits;
     private double varianceTerm;
-    private int r_epochs;
+    private int r;
     private Random m_rnd;
     private int m_depth;
     private double[] bounds = new double[]{Double.MAX_VALUE, -Double.MAX_VALUE};
@@ -74,7 +74,7 @@ public class VTreeNode
 
 
 
-    void mctsSearch(ElapsedCpuTimer elapsedTimer) {
+    void mctsSearch(ElapsedCpuTimer elapsedTimer, String ucb) {
 
         double avgTimeTaken;
         double acumTimeTaken = 0;
@@ -91,7 +91,7 @@ public class VTreeNode
             ElapsedCpuTimer elapsedTimerIteration = new ElapsedCpuTimer();
 
             // 1. Selection and 2. Expansion are executed in treePolicy(state)
-            VTreeNode selected = treePolicy(state);
+            VTreeNode selected = treePolicy(state, ucb);
             // 3. Simulation - rollout
             double delta = selected.rollOut(state);
             //4. Back-propagation
@@ -126,38 +126,40 @@ public class VTreeNode
      * @param state Current state to do the policy from.
      * @return the expanded node.
      */
-    private VTreeNode treePolicy(GameState state) {
+
+    private VTreeNode treePolicy(GameState state, String ucb) {
 
         //'cur': our current node in the tree.
         VTreeNode cur = this;
 
         //We keep going down the tree as long as the game is not over and we haven't reached the maximum depth
-        while (!state.isTerminal() && cur.m_depth < params.rollout_depth)
-        {
+        while (!state.isTerminal() && cur.m_depth < params.rollout_depth) {
             //If not fully expanded, expand this one.
             if (cur.notFullyExpanded()) {
                 //This one is the node to start the rollout from.
                 return cur.expand(state);
             } else {
-                // todo test this loop, might be wrong
-                int counter = 0;
-                double alpha = 0.001;
-                while (counter < Math.pow(1 + alpha, this.r_epochs + 1) - Math.pow(1 + alpha, this.r_epochs)) {
-                    if (counter == 0) {
-                        cur = cur.ucb1Tuned(state);
-                    }
-                    counter++;
+                if (ucb.equals("UCB1Tuned")) {
+                    cur = cur.ucb1Tuned(state);
                 }
-                this.r_epochs++;
+                if (ucb.equals("UCB2")) {
+                    int counter = 0;
+                    double alpha = 0.001;
+                    while (counter < Math.pow(1 + alpha, this.r + 1) - Math.pow(1 + alpha, this.r)) {
+                        if (counter == 0) {
+                            cur = cur.ucb2(state, alpha);
+                        }
+                        counter++;
+                    }
+                    this.r++;
+                }
             }
         }
-        //This one is the node to start the rollout from.
-        return cur;
+    //This one is the node to start the rollout from.
+    return cur;
     }
 
     // UCB2 calculation
-    // todo create tree policy class and extend from there
-    // todo check below
     private VTreeNode ucb2(GameState state, double alpha) {
         VTreeNode selected = null;
         double bestValue = -Double.MAX_VALUE;
@@ -171,8 +173,8 @@ public class VTreeNode
 
             // n is the number of epochs the node was selected. So = epoch here
             double explore = Math.sqrt((1 + alpha)
-                    * Math.log(Math.exp(1) * (this.nVisits + 1) / (Math.pow(1 + alpha, this.r_epochs)))
-                    / (2 * Math.pow(1 + alpha, this.r_epochs)));
+                    * Math.log(Math.exp(1) * (this.nVisits + 1) / (Math.pow(1 + alpha, this.r)))
+                    / (2 * Math.pow(1 + alpha, this.r)));
 
             double uctValue = exploit + explore;
 
@@ -196,8 +198,6 @@ public class VTreeNode
         return selected;
     }
 
-    // UCB1 tunes calculation: https://link.springer.com/content/pdf/10.1023%2FA%3A1013689704352.pdf
-    // todo check below
     private VTreeNode ucb1Tuned(GameState state) {
         VTreeNode selected = null;
         double bestValue = -Double.MAX_VALUE;
