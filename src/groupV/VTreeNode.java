@@ -179,31 +179,113 @@ public class VTreeNode {
 	 * @param act Action to use to advance the game state.
 	 */
 	// OPPONENT MODELLING
-	private void roll(GameState gs, Types.ACTIONS act) {
-		// Simple, all random first, then my position.
-		// To roll the state forward, we need to pass an action for *all* players.
+	private void roll(GameState gs, Types.ACTIONS act)
+	{
+		//To roll the state forward, we need to pass an action for *all* players.
 		int nPlayers = 4;
 		Types.ACTIONS[] actionsAll = new Types.ACTIONS[4];
 
-		// This is the location in the array of actions according to my player ID
+		//This is the location in the array of actions according to my player ID
 		int playerId = gs.getPlayerId() - Types.TILETYPE.AGENT0.getKey();
 
-		for (int i = 0; i < nPlayers; ++i) {
-			if (playerId == i) {
-				// This is me, just put the action in the array.
+		Vector2d playerPosition = gs.getPosition();
+		ArrayList aliveEnemies = gs.getAliveEnemyIDs();
+		Types.TILETYPE[][] board = gs.getBoard();
+
+		int xMin, xMax, yMin, yMax;
+
+		if (visionRange == -1) {
+			xMin = 0;
+			xMax = boardSize;
+			yMin = 0;
+			yMax = boardSize;
+		} else {
+			xMin = Math.max(playerPosition.x - visionRange, 0);
+			xMax = Math.min(playerPosition.x + visionRange, boardSize);
+			yMin = Math.max(playerPosition.y - visionRange, 0);
+			yMax = Math.min(playerPosition.y + visionRange, boardSize);
+		}
+
+		ArrayList<Types.ACTIONS>[] enemiesActions = new ArrayList[4];
+		int foundEnemies = aliveEnemies.size();
+
+		for(int x = xMin; x < xMax; x++) {
+			for(int y = yMin; y < yMax; y++){
+				if (aliveEnemies.contains(board[y][x])) {
+					// Find available actions
+					Vector2d enemyPosition = new Vector2d(x,y);
+					Types.TILETYPE enemyName = board[y][x];
+
+					enemiesActions[board[y][x].getKey() - Types.TILETYPE.AGENT0.getKey()] =
+							availableActions(gs, enemyPosition, enemyName);
+
+					foundEnemies--;
+				}
+			}
+			if (foundEnemies == 0)
+				break;
+		}
+
+		for(int i = 0; i < nPlayers; ++i) {
+			if(playerId == i) {
+				//This is me, just put the action in the array.
 				actionsAll[i] = act;
 			} else {
-				// This is another player. We can have different models:
-
 				// Random model
-				int actionIdx = m_rnd.nextInt(gs.nActions()); // Action index at random
-				actionsAll[i] = Types.ACTIONS.all().get(actionIdx); // Pick the action from the array of actions
+				if (enemiesActions[i] != null) {
+					int actionIdx = m_rnd.nextInt(enemiesActions[i].size());    // Action index at random
+					actionsAll[i] = enemiesActions[i].get(actionIdx);           // Pick the action from the array of actions
+				} else {
+					actionsAll[i] = Types.ACTIONS.ACTION_STOP;
+				}
 			}
 		}
 
-		// Once the array is ready, advance the state. This changes the internal 'gs'
-		// object.
+		//Once the array is ready, advance the state. This changes the internal 'gs' object.
 		gs.next(actionsAll);
+	}
+
+	private ArrayList<Types.ACTIONS> availableActions(GameState gs, Vector2d pos, Types.TILETYPE name) {
+
+		Types.TILETYPE[][] board = gs.getBoard();
+
+		ArrayList<Types.ACTIONS> availableActions = Types.ACTIONS.all();
+
+		int width = board.length;
+		int height = board[0].length;
+
+		int x = pos.x;
+		int y = pos.y;
+
+		if ( x == width-1 ||
+				board[y][x + 1] == Types.TILETYPE.RIGID ||
+				board[y][x + 1] == Types.TILETYPE.FLAMES ||
+				board[y][x + 1] == Types.TILETYPE.WOOD ) {
+			availableActions.remove(Types.ACTIONS.ACTION_RIGHT);
+		}
+
+		if ( x == 0 ||
+				board[y][x - 1] == Types.TILETYPE.RIGID ||
+				board[y][x - 1] == Types.TILETYPE.FLAMES ||
+				board[y][x - 1] == Types.TILETYPE.WOOD ) {
+			availableActions.remove(Types.ACTIONS.ACTION_LEFT);
+		}
+
+		if ( y == 0 ||
+				board[y - 1][x] == Types.TILETYPE.RIGID ||
+				board[y - 1][x] == Types.TILETYPE.FLAMES ||
+				board[y - 1][x] == Types.TILETYPE.WOOD ) {
+			availableActions.remove(Types.ACTIONS.ACTION_UP);
+		}
+
+		if ( y == height-1 ||
+				board[y + 1][x] == Types.TILETYPE.RIGID ||
+				board[y + 1][x] == Types.TILETYPE.FLAMES ||
+				board[y + 1][x] == Types.TILETYPE.WOOD ) {
+			availableActions.remove(Types.ACTIONS.ACTION_DOWN);
+		}
+
+		return availableActions;
 	}
 
 	/**
