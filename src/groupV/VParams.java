@@ -27,7 +27,7 @@ public class VParams implements ParameterSet {
     // Parameters
     public double K = Math.sqrt(2); // constant for UCB1 - default sqrt(2)
     public int rollout_depth = 8;   // Number of steps the tree can grow from the root
-    public int heuristic_method = CUSTOM_HEURISTIC; // Heuristic to evaluate a state
+    public int heuristic_method = V_HEURISTIC; // Default Heuristic to evaluate a state
 
     // Budget settings
     public int stop_type = STOP_TIME; // default = 0

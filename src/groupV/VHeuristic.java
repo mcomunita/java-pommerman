@@ -10,9 +10,7 @@ import players.heuristics.StateHeuristic;
 import java.util.*;
 
 import static java.lang.Math.*;
-import static java.lang.Math.min;
 import static utils.Utils.*;
-import static utils.Utils.positionIsPassable;
 
 public class VHeuristic extends StateHeuristic {
 
@@ -32,7 +30,8 @@ public class VHeuristic extends StateHeuristic {
 
         // Compute a score relative to the root's state.
         BoardStats lastBoardState = new BoardStats(gs, this.random);
-        double rawScore = rootBoardStats.score(lastBoardState);
+//        double rawScore = rootBoardStats.score(lastBoardState);
+        double rawScore = rootBoardStats.score_by_state(lastBoardState);
 
         // TODO: Should we reserve -1 and 1 to LOSS and WIN, and shrink rawScore to be in [-0.5, 0.5]?
         // rawScore is in [-1, 1], move it to [-0.5, 0.5]
@@ -60,6 +59,7 @@ public class VHeuristic extends StateHeuristic {
 //        double FACTOR_SAFE_DIRECTIONS = 0.2;
 //        double FACTOR_BOMB_DIRECTIONS = 0.2;
         double FACTOR_SAFE_DIRECTIONS = 0.4;
+        double FACTOR_BOMB_DIRECTIONS = 0.0;
 
         // 0.3
         double FACTOR_ENEMY;
@@ -192,7 +192,8 @@ public class VHeuristic extends StateHeuristic {
         double score(BoardStats futureState)
         {
             int diffSafeDirections = futureState.getNumberOfSafeDirections() - this.getNumberOfSafeDirections();
-            //int diffDirectionsInRangeOfBomb = -(futureState.getNumberOfDirectionsInRangeOfBomb() - this.getNumberOfDirectionsInRangeOfBomb());
+//            int diffSafeDirections = 0;
+//            int diffDirectionsInRangeOfBomb = -(futureState.getNumberOfDirectionsInRangeOfBomb() - this.getNumberOfDirectionsInRangeOfBomb());
 
             int diffTeammates = futureState.nTeammates - this.nTeammates;
             int diffEnemies = -(futureState.nEnemies - this.nEnemies);
@@ -206,7 +207,7 @@ public class VHeuristic extends StateHeuristic {
             int diffDistanceToNearestPowerUp = -(futureState.getDistanceToNearestPowerUp() - this.getDistanceToNearestPowerUp());
 
             return (diffSafeDirections / 4.0) * FACTOR_SAFE_DIRECTIONS
-                    //+ (diffDirectionsInRangeOfBomb / 4.0) * FACTOR_BOMB_DIRECTIONS
+//                    + (diffDirectionsInRangeOfBomb / 4.0) * FACTOR_BOMB_DIRECTIONS
                     + (diffEnemies / 3.0) * FACTOR_ENEMY
                     + diffTeammates * FACTOR_TEAM
                     + (diffDistanceToNearestEnemy / 10.0) * FACTOR_ENEMY_DIST
@@ -215,6 +216,50 @@ public class VHeuristic extends StateHeuristic {
                     + (diffBlastStrength / maxBlastStrength) * FACTOR_BLAST
                     //+ diffAdjacentEnemy * FACTOR_ADJ_ENEMY
                     + (diffDistanceToNearestPowerUp / 10.0) * FACTOR_NEAREST_POWERUP;
+        }
+        
+        double score_by_state(BoardStats futureState) {
+        	// sort current state to different types: Explore, Attack, or Escape
+        	// Explore: there is no enemy or bombs around, so the current aim of moving around is to explore the board
+        	// Attack:  there is Enemy but no bombs around, the current aim is to attack the enemy
+        	// Escape:  there is bombs around, so the current aim is to escape the area as soon as possible
+        	
+        	// value pointers to distinguish between different current state types
+        	int num_safe_directions = this.getNumberOfSafeDirections();
+        	int distance_nearest_enemy = this.getDistanceToNearestEnemy();
+        	
+        	int diffSafeDirections = futureState.getNumberOfSafeDirections() - num_safe_directions;
+        	int diffTeammates = futureState.nTeammates - this.nTeammates;
+        	int diffEnemies = -(futureState.nEnemies - this.nEnemies);
+        	int diffDistanceToNearestEnemy = -(futureState.getDistanceToNearestEnemy() - distance_nearest_enemy);
+        	int diffWoods = -(futureState.nWoods - this.nWoods);
+        	int diffCanKick = futureState.canKick && !this.canKick ? 1 : 0;
+        	int diffBlastStrength = futureState.blastStrength - this.blastStrength;
+        	int diffDistanceToNearestPowerUp = -(futureState.getDistanceToNearestPowerUp() - this.getDistanceToNearestPowerUp());
+        	
+        	// according to current enemy and bomb conditions, sort current state type
+        	if(num_safe_directions >= 2) {
+        		// safe, if there is enemy nearby, attack, else explore
+        		if(distance_nearest_enemy < 3) {
+        			// attack
+        			FACTOR_ENEMY -= 0.001;
+        			FACTOR_SAFE_DIRECTIONS +=0.001;
+        		}
+        	} else {
+        		// not safe, escape
+        		FACTOR_SAFE_DIRECTIONS -= 0.005;
+        		FACTOR_ENEMY += 0.005;
+        	}
+        	
+        	return  (diffSafeDirections / 4.0) * FACTOR_SAFE_DIRECTIONS
+                  + (diffEnemies / 3.0) * FACTOR_ENEMY
+                  + diffTeammates * FACTOR_TEAM
+                  + (diffDistanceToNearestEnemy / 10.0) * FACTOR_ENEMY_DIST
+                  + (diffWoods / maxWoods) * FACTOR_WOODS
+                  + diffCanKick * FACTOR_CANKICK
+                  + (diffBlastStrength / maxBlastStrength) * FACTOR_BLAST
+                  + (diffDistanceToNearestPowerUp / 10.0) * FACTOR_NEAREST_POWERUP;
+        	
         }
 
         private HashMap<Types.DIRECTIONS, Integer> getDirectionsInRangeOfBomb(){
