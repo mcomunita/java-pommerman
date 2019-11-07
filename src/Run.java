@@ -2,6 +2,7 @@ import core.Game;
 import players.*;
 import players.mcts.MCTSParams;
 import players.mcts.MCTSPlayer;
+import players.mcts.MCTSPlayer2;
 import players.rhea.RHEAPlayer;
 import players.rhea.utils.Constants;
 import players.rhea.utils.RHEAParams;
@@ -52,11 +53,11 @@ public class Run {
                     "0",        // Game Mode. 0: FFA; 1: TEAM");
                     "-1",       // Number of level generation seeds. -1 to execute with the ones from paper (20).")
                     "10",       // Repetitions per seed [N].
-                    "-1",        // Vision Range [VR]. (0, 1, 2... for PO; -1 for Full Observability)
-                    "4",        // Agent 1 (0 DoNothing, 1 Random, 2 OSLA, 3 RuleBased, 4 RHEA, 5 MCTS
-                    "2",        // Agent 2
+                    "2",        // Vision Range [VR]. (0, 1, 2... for PO; -1 for Full Observability)
+                    "6",        // Agent 1 (0 DoNothing, 1 Random, 2 OSLA, 3 RuleBased, 4 RHEA, 5 MCTS
+                    "5",        // Agent 2
                     "5",        // Agent 3
-                    "3"         // Agent 4
+                    "5"         // Agent 4
             };
 
         if(args.length != 8) {
@@ -144,6 +145,16 @@ public class Run {
                         mctsParams.heuristic_method = mctsParams.CUSTOM_HEURISTIC;
                         p = new MCTSPlayer(seed, playerID++, mctsParams);
                         playerStr[i-4] = "MCTS";
+                        break;
+                    case 6:
+                        MCTSParams mctsParams2 = new MCTSParams();
+                        mctsParams2.stop_type = mctsParams2.STOP_ITERATIONS;
+                        mctsParams2.num_iterations = 200;
+                        mctsParams2.rollout_depth = 12;
+
+                        mctsParams2.heuristic_method = mctsParams2.CUSTOM_HEURISTIC;
+                        p = new MCTSPlayer2(seed, playerID++, mctsParams2);
+                        playerStr[i-4] = "MCTS2";
                         break;
                     default:
                         System.out.println("WARNING: Invalid agent ID: " + agentType );

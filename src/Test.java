@@ -4,6 +4,7 @@ import utils.Types;
 import players.rhea.utils.Constants;
 import players.mcts.MCTSPlayer;
 import players.mcts.MCTSParams;
+import players.mcts.MCTSPlayer2;
 import players.rhea.RHEAPlayer;
 import players.rhea.utils.RHEAParams;
 
@@ -37,14 +38,10 @@ public class Test {
         RHEAParams rheaParams = new RHEAParams();
         rheaParams.heurisic_type = Constants.CUSTOM_HEURISTIC;
 
+        players.add(new MCTSPlayer2(seed, playerID++, mctsParams));
         players.add(new MCTSPlayer(seed, playerID++, mctsParams));
-        //players.add(new MCTSPlayer(seed, playerID++, mctsParams));
-
-//        players.add(new SimplePlayer(seed, playerID++));
-        players.add(new RHEAPlayer(seed, playerID++, rheaParams));
-//        players.add(new SimplePlayer(seed, playerID++));
-        players.add(new MCTSPlayer(seed, playerID++, new MCTSParams()));
-        players.add(new RHEAPlayer(seed, playerID++, rheaParams));
+        players.add(new MCTSPlayer(seed, playerID++, mctsParams));
+        players.add(new MCTSPlayer(seed, playerID++, mctsParams));
 
         // Make sure we have exactly NUM_PLAYERS players
         assert players.size() == Types.NUM_PLAYERS : "There should be " + Types.NUM_PLAYERS +
@@ -55,7 +52,7 @@ public class Test {
         game.setPlayers(players);
 
         //Run a single game with the players
-        Run.runGame(game, ki1, ki2, useSeparateThreads);
+//        Run.runGame(game, ki1, ki2, useSeparateThreads);
 
         /* Uncomment to run the replay of the previous game: */
 //        if (game.isLogged()){
@@ -67,8 +64,8 @@ public class Test {
 
 
         /* Run with no visuals, N Times: */
-//        int N = 20;
-//        Run.runGames(game, new long[]{seed}, N, useSeparateThreads);
+        int N = 1;
+        Run.runGames(game, new long[]{seed}, N, useSeparateThreads);
 
     }
 

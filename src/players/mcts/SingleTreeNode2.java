@@ -1,7 +1,6 @@
 package players.mcts;
 
 import core.GameState;
-import core.ForwardModel;
 import players.heuristics.AdvancedHeuristic;
 import players.heuristics.CustomHeuristic;
 import players.heuristics.StateHeuristic;
@@ -14,12 +13,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
-public class SingleTreeNode
+public class SingleTreeNode2
 {
     public MCTSParams params;
 
-    private SingleTreeNode parent;
-    private SingleTreeNode[] children;
+    private SingleTreeNode2 parent;
+    private SingleTreeNode2[] children;
     private double totValue;
     private int nVisits;
     private Random m_rnd;
@@ -34,23 +33,24 @@ public class SingleTreeNode
     private GameState rootState;
     private StateHeuristic rootStateHeuristic;  // heuristic used in rollOut at the end of simulation
 
+    private int visionRange = Types.DEFAULT_VISION_RANGE;
+    private int boardSize = Types.BOARD_SIZE;
 
-
-    SingleTreeNode(MCTSParams p, Random rnd, int num_actions, Types.ACTIONS[] actions) {
+    SingleTreeNode2(MCTSParams p, Random rnd, int num_actions, Types.ACTIONS[] actions) {
         this(p, null, -1, rnd, num_actions, actions, 0, null);
     }
 
 
 
-    private SingleTreeNode(MCTSParams p, SingleTreeNode parent, int childIdx, Random rnd, int num_actions,
-                           Types.ACTIONS[] actions, int fmCallsCount, StateHeuristic sh) {
+    private SingleTreeNode2(MCTSParams p, SingleTreeNode2 parent, int childIdx, Random rnd, int num_actions,
+                            Types.ACTIONS[] actions, int fmCallsCount, StateHeuristic sh) {
         this.params = p;
         this.fmCallsCount = fmCallsCount;
         this.parent = parent;
         this.m_rnd = rnd;
         this.num_actions = num_actions;
         this.actions = actions;
-        children = new SingleTreeNode[num_actions];
+        children = new SingleTreeNode2[num_actions];
         totValue = 0.0;
         this.childIdx = childIdx;
         if(parent != null) {
@@ -91,7 +91,7 @@ public class SingleTreeNode
             ElapsedCpuTimer elapsedTimerIteration = new ElapsedCpuTimer();
 
             // 1. Selection and 2. Expansion are executed in treePolicy(state)
-            SingleTreeNode selected = treePolicy(state);
+            SingleTreeNode2 selected = treePolicy(state);
             // 3. Simulation - rollout
             double delta = selected.rollOut(state);
             //4. Back-propagation
@@ -126,10 +126,10 @@ public class SingleTreeNode
      * @param state Current state to do the policy from.
      * @return the expanded node.
      */
-    private SingleTreeNode treePolicy(GameState state) {
+    private SingleTreeNode2 treePolicy(GameState state) {
 
         //'cur': our current node in the tree.
-        SingleTreeNode cur = this;
+        SingleTreeNode2 cur = this;
 
         //We keep going down the tree as long as the game is not over and we haven't reached the maximum depth
         while (!state.isTerminal() && cur.m_depth < params.rollout_depth)
@@ -154,7 +154,7 @@ public class SingleTreeNode
      * @param state Game state *before* the expansion happens (i.e. parent node that is not fully expanded).
      * @return The newly expande tree node.
      */
-    private SingleTreeNode expand(GameState state) {
+    private SingleTreeNode2 expand(GameState state) {
 
         //Go through all the not-expanded children of this node and pick one at random.
         int bestAction = 0;
@@ -173,7 +173,7 @@ public class SingleTreeNode
 
         //state is now the next state, of the expanded node. Create a node with such state
         // and add it to the tree, as child of 'this'
-        SingleTreeNode tn = new SingleTreeNode(params,this,bestAction,this.m_rnd,num_actions,
+        SingleTreeNode2 tn = new SingleTreeNode2(params,this,bestAction,this.m_rnd,num_actions,
                 actions, fmCallsCount, rootStateHeuristic);
         children[bestAction] = tn;
 
@@ -190,7 +190,6 @@ public class SingleTreeNode
      */
     private void roll(GameState gs, Types.ACTIONS act)
     {
-        //Simple, all random first, then my position.
         //To roll the state forward, we need to pass an action for *all* players.
         int nPlayers = 4;
         Types.ACTIONS[] actionsAll = new Types.ACTIONS[4];
@@ -198,17 +197,56 @@ public class SingleTreeNode
         //This is the location in the array of actions according to my player ID
         int playerId = gs.getPlayerId() - Types.TILETYPE.AGENT0.getKey();
 
-        for(int i = 0; i < nPlayers; ++i)
-        {
-            if(playerId == i)
-            {
+        Vector2d playerPosition = gs.getPosition();
+        ArrayList aliveEnemies = gs.getAliveEnemyIDs();
+        Types.TILETYPE[][] board = gs.getBoard();
+
+        int xMin, xMax, yMin, yMax;
+
+        if (visionRange == -1) {
+            xMin = 0;
+            xMax = boardSize;
+            yMin = 0;
+            yMax = boardSize;
+        } else {
+            xMin = Math.max(playerPosition.x - visionRange, 0);
+            xMax = Math.min(playerPosition.x + visionRange, boardSize);
+            yMin = Math.max(playerPosition.y - visionRange, 0);
+            yMax = Math.min(playerPosition.y + visionRange, boardSize);
+        }
+
+        ArrayList<Types.ACTIONS>[] enemiesActions = new ArrayList[4];
+        int foundEnemies = aliveEnemies.size();
+
+        for(int x = xMin; x < xMax; x++) {
+            for(int y = yMin; y < yMax; y++){
+                if (aliveEnemies.contains(board[y][x])) {
+                    // Find available actions
+                    Vector2d enemyPosition = new Vector2d(x,y);
+                    Types.TILETYPE enemyName = board[y][x];
+
+                    enemiesActions[board[y][x].getKey() - Types.TILETYPE.AGENT0.getKey()] =
+                            availableActions(gs, enemyPosition, enemyName);
+
+                    foundEnemies--;
+                }
+            }
+            if (foundEnemies == 0)
+                break;
+        }
+
+        for(int i = 0; i < nPlayers; ++i) {
+            if(playerId == i) {
                 //This is me, just put the action in the array.
                 actionsAll[i] = act;
-            }else {
-                // This is another player.
+            } else {
                 // Random model
-                int actionIdx = m_rnd.nextInt(gs.nActions());           // Action index at random
-                actionsAll[i] = Types.ACTIONS.all().get(actionIdx);     // Pick the action from the array of actions
+                if (enemiesActions[i] != null) {
+                    int actionIdx = m_rnd.nextInt(enemiesActions[i].size());    // Action index at random
+                    actionsAll[i] = enemiesActions[i].get(actionIdx);           // Pick the action from the array of actions
+                } else {
+                    actionsAll[i] = Types.ACTIONS.ACTION_STOP;
+                }
             }
         }
 
@@ -216,6 +254,48 @@ public class SingleTreeNode
         gs.next(actionsAll);
     }
 
+    private ArrayList<Types.ACTIONS> availableActions(GameState gs, Vector2d pos, Types.TILETYPE name) {
+
+        Types.TILETYPE[][] board = gs.getBoard();
+
+        ArrayList<Types.ACTIONS> availableActions = Types.ACTIONS.all();
+
+        int width = board.length;
+        int height = board[0].length;
+
+        int x = pos.x;
+        int y = pos.y;
+
+        if ( x == width-1 ||
+                board[y][x + 1] == Types.TILETYPE.RIGID ||
+                board[y][x + 1] == Types.TILETYPE.FLAMES ||
+                board[y][x + 1] == Types.TILETYPE.WOOD ) {
+            availableActions.remove(Types.ACTIONS.ACTION_RIGHT);
+        }
+
+        if ( x == 0 ||
+                board[y][x - 1] == Types.TILETYPE.RIGID ||
+                board[y][x - 1] == Types.TILETYPE.FLAMES ||
+                board[y][x - 1] == Types.TILETYPE.WOOD ) {
+            availableActions.remove(Types.ACTIONS.ACTION_LEFT);
+        }
+
+        if ( y == 0 ||
+                board[y - 1][x] == Types.TILETYPE.RIGID ||
+                board[y - 1][x] == Types.TILETYPE.FLAMES ||
+                board[y - 1][x] == Types.TILETYPE.WOOD ) {
+            availableActions.remove(Types.ACTIONS.ACTION_UP);
+        }
+
+        if ( y == height-1 ||
+                board[y + 1][x] == Types.TILETYPE.RIGID ||
+                board[y + 1][x] == Types.TILETYPE.FLAMES ||
+                board[y + 1][x] == Types.TILETYPE.WOOD ) {
+            availableActions.remove(Types.ACTIONS.ACTION_DOWN);
+        }
+
+        return availableActions;
+    }
 
 
     /**
@@ -223,14 +303,14 @@ public class SingleTreeNode
      * @param state
      * @return
      */
-    private SingleTreeNode uct(GameState state) {
+    private SingleTreeNode2 uct(GameState state) {
 
         //We'll pick the action with the highest UCB1 value.
-        SingleTreeNode selected = null;
+        SingleTreeNode2 selected = null;
         double bestValue = -Double.MAX_VALUE;
 
         //For each children, calculate the different parts.
-        for (SingleTreeNode child : this.children)
+        for (SingleTreeNode2 child : this.children)
         {
 
             double hvVal = child.totValue;
@@ -353,9 +433,9 @@ public class SingleTreeNode
      * @param node Node to start backup from. This node should be the one expanded in this iteration.
      * @param result Reward to back-propagate
      */
-    private void backUp(SingleTreeNode node, double result)
+    private void backUp(SingleTreeNode2 node, double result)
     {
-        SingleTreeNode n = node;
+        SingleTreeNode2 n = node;
 
         //Go up until n == null, which happens after updating the root.
         while(n != null)
@@ -460,7 +540,7 @@ public class SingleTreeNode
      * @return true if the node is not fully expanded.
      */
     private boolean notFullyExpanded() {
-        for (SingleTreeNode tn : children) {
+        for (SingleTreeNode2 tn : children) {
             if (tn == null) {
                 return true;
             }

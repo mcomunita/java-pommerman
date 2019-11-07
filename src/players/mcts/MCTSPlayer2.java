@@ -1,15 +1,16 @@
 package players.mcts;
 
 import core.GameState;
-import players.optimisers.ParameterizedPlayer;
 import players.Player;
+import players.optimisers.ParameterizedPlayer;
 import utils.ElapsedCpuTimer;
 import utils.Types;
 
 import java.util.ArrayList;
 import java.util.Random;
+import java.util.Arrays;
 
-public class MCTSPlayer extends ParameterizedPlayer {
+public class MCTSPlayer2 extends ParameterizedPlayer {
 
     /**
      * Random generator.
@@ -26,11 +27,11 @@ public class MCTSPlayer extends ParameterizedPlayer {
      */
     public MCTSParams params;
 
-    public MCTSPlayer(long seed, int id) {
+    public MCTSPlayer2(long seed, int id) {
         this(seed, id, new MCTSParams());
     }
 
-    public MCTSPlayer(long seed, int id, MCTSParams params) {
+    public MCTSPlayer2(long seed, int id, MCTSParams params) {
         super(seed, id, params);
         reset(seed, id);
 
@@ -62,10 +63,6 @@ public class MCTSPlayer extends ParameterizedPlayer {
             int[] msg = gs.getMessage();
         }
 
-        // Print Game State
-//        System.out.println("Game State");
-//        System.out.println(gs);
-
         ElapsedCpuTimer ect = new ElapsedCpuTimer();
         ect.setMaxTimeMillis(params.num_time);
 
@@ -73,7 +70,7 @@ public class MCTSPlayer extends ParameterizedPlayer {
         int num_actions = actions.length;
 
         // Root of the tree = current game state
-        SingleTreeNode m_root = new SingleTreeNode(params, m_rnd, num_actions, actions);
+        SingleTreeNode2 m_root = new SingleTreeNode2(params, m_rnd, num_actions, actions);
         m_root.setRootGameState(gs);
 
         //Determine the action using MCTS...
@@ -98,6 +95,6 @@ public class MCTSPlayer extends ParameterizedPlayer {
 
     @Override
     public Player copy() {
-        return new MCTSPlayer(seed, playerID, params);
+        return new MCTSPlayer2(seed, playerID, params);
     }
 }

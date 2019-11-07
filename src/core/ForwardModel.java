@@ -238,9 +238,7 @@ public class ForwardModel {
     int[][] getBombLife() {
         return bombLife;
     }
-    GameObject[] getAgents() {
-        return agents;
-    }
+    GameObject[] getAgents() { return agents; }
     ArrayList<GameObject> getAliveAgents() {
         return aliveAgents;
     }
