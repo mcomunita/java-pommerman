@@ -30,8 +30,8 @@ public class VHeuristic extends StateHeuristic {
 
         // Compute a score relative to the root's state.
         BoardStats lastBoardState = new BoardStats(gs, this.random);
-//        double rawScore = rootBoardStats.score(lastBoardState);
-        double rawScore = rootBoardStats.score_by_state(lastBoardState);
+        double rawScore = rootBoardStats.score(lastBoardState);
+//        double rawScore = rootBoardStats.score_by_state(lastBoardState);
 
         // TODO: Should we reserve -1 and 1 to LOSS and WIN, and shrink rawScore to be in [-0.5, 0.5]?
         // rawScore is in [-1, 1], move it to [-0.5, 0.5]
