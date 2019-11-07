@@ -218,6 +218,7 @@ public class VHeuristic extends StateHeuristic {
                     + (diffDistanceToNearestPowerUp / 10.0) * FACTOR_NEAREST_POWERUP;
         }
         
+        
         double score_by_state(BoardStats futureState) {
         	// sort current state to different types: Explore, Attack, or Escape
         	// Explore: there is no enemy or bombs around, so the current aim of moving around is to explore the board
@@ -247,8 +248,8 @@ public class VHeuristic extends StateHeuristic {
         		}
         	} else {
         		// not safe, escape
-        		FACTOR_SAFE_DIRECTIONS -= 0.005;
-        		FACTOR_ENEMY += 0.005;
+        		FACTOR_SAFE_DIRECTIONS -= 0.001;
+        		FACTOR_ENEMY += 0.001;
         	}
         	
         	return  (diffSafeDirections / 4.0) * FACTOR_SAFE_DIRECTIONS
