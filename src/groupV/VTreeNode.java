@@ -29,6 +29,10 @@ public class VTreeNode {
 	private GameState rootState;
 	private StateHeuristic rootStateHeuristic; // heuristic used in rollOut at the end of simulation
 
+	// Used by the opponent model in roll method
+	private int visionRange = Types.DEFAULT_VISION_RANGE;
+	private int boardSize = Types.BOARD_SIZE;
+
 	VTreeNode(VParams p, Random rnd, int num_actions, Types.ACTIONS[] actions) {
 		this(p, null, -1, rnd, num_actions, actions, 0, null);
 	}
@@ -192,6 +196,7 @@ public class VTreeNode {
 		ArrayList aliveEnemies = gs.getAliveEnemyIDs();
 		Types.TILETYPE[][] board = gs.getBoard();
 
+		// Set the limits for board exploration
 		int xMin, xMax, yMin, yMax;
 
 		if (visionRange == -1) {
@@ -207,8 +212,10 @@ public class VTreeNode {
 		}
 
 		ArrayList<Types.ACTIONS>[] enemiesActions = new ArrayList[4];
+
 		int foundEnemies = aliveEnemies.size();
 
+		// Scan board to find enemies position
 		for(int x = xMin; x < xMax; x++) {
 			for(int y = yMin; y < yMax; y++){
 				if (aliveEnemies.contains(board[y][x])) {
@@ -245,6 +252,15 @@ public class VTreeNode {
 		gs.next(actionsAll);
 	}
 
+	/**
+	 * Finds the available actions for an agent
+	 *
+	 * @param gs  	Game state.
+	 * @param pos 	Agent position.
+	 * @param name  Agent ID.
+	 *
+	 * return array of available action
+	 */
 	private ArrayList<Types.ACTIONS> availableActions(GameState gs, Vector2d pos, Types.TILETYPE name) {
 
 		Types.TILETYPE[][] board = gs.getBoard();

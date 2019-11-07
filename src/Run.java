@@ -53,13 +53,13 @@ public class Run {
              */
             args = new String[]{
                     "0",        // Game Mode. 0: FFA; 1: TEAM");
-                    "-1",       // Number of level generation seeds. -1 to execute with the ones from paper (20).")
-                    "10",       // Repetitions per seed [N].
+                    "1",       // Number of level generation seeds. -1 to execute with the ones from paper (20).")
+                    "5",       // Repetitions per seed [N].
                     "-1",        // Vision Range [VR]. (0, 1, 2... for PO; -1 for Full Observability)
-                    "1",        // Agent 1 (0 DoNothing, 1 Random, 2 OSLA, 3 RuleBased, 4 RHEA, 5 MCTS, 6 VPlayer
+                    "4",        // Agent 1 (0 DoNothing, 1 Random, 2 OSLA, 3 RuleBased, 4 RHEA, 5 MCTS, 6 VPlayer
                     "2",        // Agent 2
-                    "5",        // Agent 3
-                    "3"         // Agent 4
+                    "6",        // Agent 3
+                    "5"         // Agent 4
             };
 
         if(args.length != 8) {
